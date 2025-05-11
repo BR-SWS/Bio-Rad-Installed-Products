@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,58 +6,68 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Excel Search with Column Filters</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #search-container {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-    input[type="text"] {
-      margin-bottom: 10px;
-      padding: 5px;
-      width: 300px;
-    }
-    button {
-      padding: 5px 10px;
-      margin-left: 10px;
-      cursor: pointer;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      padding: 8px;
-      text-align: left;
-      border: 1px solid #ddd;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    #paginationControls {
-      margin-top: 15px;
-    }
-    #paginationControls button {
-      padding: 5px 10px;
-      margin: 0 5px;
-    }
-    .filter-row input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 4px;
-    }
-  </style>
+  
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #search-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  input[type="text"] {
+    margin-bottom: 10px;
+    padding: 5px;
+    width: 300px;
+  }
+  button {
+    padding: 5px 10px;
+    margin-left: 10px;
+    cursor: pointer;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  th, td {
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #ddd; /* Light gray border */
+  }
+  th {
+    background-color: #4caf50; /* Green background for header */
+    color: white; /* White text for header */
+    font-size: 16px; /* Keep header text size the same */
+  }
+  td {
+    font-size: 12px; /* Make the table content text smaller */
+  }
+  tr:nth-child(even) {
+    background-color: #f9f9f9; /* Light gray for even rows */
+  }
+  tr:nth-child(odd) {
+    background-color: #f2f2f2; /* Slightly darker gray for odd rows */
+  }
+  #paginationControls {
+    margin-top: 15px;
+  }
+  #paginationControls button {
+    padding: 5px 10px;
+    margin: 0 5px;
+  }
+  .filter-row input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px;
+  }
+</style>
+
 </head>
 <body>
 
