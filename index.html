@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Installed Products Search</title>
+  <title>Excel Search with Column Filters</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
   
 <style>
@@ -104,7 +104,7 @@
 
       if (dateInstalledIndex !== -1) {
         jsonData.slice(1).forEach(row => {
-          const excelDate = row[dateInstalledIndex];
+          const excelDate = row[dateInstalledIndex]+1;
           if (typeof excelDate === 'number') {
             row[dateInstalledIndex] = excelDateToJSDate(excelDate).toLocaleDateString();
           }
