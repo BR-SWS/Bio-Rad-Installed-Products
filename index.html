@@ -1,146 +1,167 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Excel Search with Column Filters</title>
+  <title>Installed Product Search</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
-  
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  #search-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-  }
-  input[type="text"] {
-    margin-bottom: 10px;
-    padding: 5px;
-    width: 300px;
-  }
-  button {
-    padding: 5px 10px;
-    margin-left: 10px;
-    cursor: pointer;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-  th, td {
-    padding: 8px;
-    text-align: left;
-    border: 1px solid #ddd; /* Light gray border */
-  }
-  th {
-    background-color: #4caf50; /* Green background for header */
-    color: white; /* White text for header */
-    font-size: 16px; /* Keep header text size the same */
-  }
-  td {
-    font-size: 12px; /* Make the table content text smaller */
-  }
-  tr:nth-child(even) {
-    background-color: #f9f9f9; /* Light gray for even rows */
-  }
-  tr:nth-child(odd) {
-    background-color: #f2f2f2; /* Slightly darker gray for odd rows */
-  }
-  #paginationControls {
-    margin-top: 15px;
-  }
-  #paginationControls button {
-    padding: 5px 10px;
-    margin: 0 5px;
-  }
-  .filter-row input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 4px;
-  }
-</style>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
+    #search-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"] {
+      margin-bottom: 10px;
+      padding: 5px;
+      width: 300px;
+    }
+
+    button {
+      padding: 5px 10px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    #tableContainerWrapper {
+      width: 100%;
+      position: relative;
+    }
+
+    #tableContainer {
+      overflow-x: auto;
+      width: 100%;
+      max-height: 70vh;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: max-content;
+      min-width: 100%;
+      table-layout: auto;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: center;
+      border: 1px solid #ddd;
+      font-size: 12px;
+      white-space: normal;
+      word-wrap: break-word;
+    }
+
+    th {
+      background-color: #4caf50;
+      color: white;
+      font-size: 16px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tr:nth-child(odd) {
+      background-color: #f2f2f2;
+    }
+
+    .filter-row input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 4px;
+    }
+
+    #paginationControls {
+      margin-top: 15px;
+    }
+
+    #paginationControls button {
+      padding: 5px 10px;
+      margin: 0 5px;
+    }
+  </style>
 </head>
 <body>
 
-<h2>Search Installed Products</h2>
-<div id="search-container">
-  <input type="text" id="searchInput" placeholder="Search all columns...">
-  <button id="clearFiltersBtn">Clear All Filters</button>
-</div>
-<div id="tableContainer"></div>
-<div id="paginationControls"></div>
+  <h2>Search Installed Products</h2>
+  <div id="search-container">
+    <input type="text" id="searchInput" placeholder="Search Installed Products...">
+    <button id="clearFiltersBtn">Clear All Filters</button>
+  </div>
 
-<script>
-  const fileUrl = 'https://raw.githubusercontent.com/BR-SWS/Bio-Rad-Installed-Products/main/InstalledProducts.xlsx';
-  let originalData = [];
-  let filteredData = [];
-  let currentPage = 1;
-  const rowsPerPage = 20;
-  let columnFilters = [];
-  let columnUniqueValues = [];
+  <div id="tableContainerWrapper">
+    <div id="tableContainer"></div>
+  </div>
 
-  // Fetch and parse the Excel file
-  fetch(fileUrl)
-    .then(response => response.arrayBuffer())
-    .then(data => {
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+  <div id="paginationControls"></div>
 
-      const headerRow = jsonData[0];
-      const dateInstalledIndex = headerRow.findIndex(cell =>
-        typeof cell === 'string' && cell.trim().toLowerCase().includes('date installed')
-      );
+  <script>
+    const fileUrl = 'https://raw.githubusercontent.com/BR-SWS/Bio-Rad-Installed-Products/main/InstalledProducts.xlsx';
+    let originalData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    const rowsPerPage = 20;
+    let columnFilters = [];
 
-      if (dateInstalledIndex !== -1) {
-        jsonData.slice(1).forEach(row => {
-          const excelDate = row[dateInstalledIndex]+1;
-          if (typeof excelDate === 'number') {
-            row[dateInstalledIndex] = excelDateToJSDate(excelDate).toLocaleDateString();
-          }
-        });
-      }
+    fetch(fileUrl)
+      .then(response => response.arrayBuffer())
+      .then(data => {
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-      originalData = jsonData;
-      filteredData = jsonData.slice(1); // Exclude header
-      columnFilters = new Array(originalData[0].length).fill('');
-      renderTable();
-      renderPaginationControls();
-    })
-    .catch(error => console.error('Error fetching or parsing the Excel file:', error));
+        const headerRow = jsonData[0];
+        const dateInstalledIndex = headerRow.findIndex(cell =>
+          typeof cell === 'string' && cell.trim().toLowerCase().includes('date installed')
+        );
 
-  function excelDateToJSDate(excelDate) {
-    return new Date((excelDate - 25569) * 86400000);
-  }
+        if (dateInstalledIndex !== -1) {
+          jsonData.slice(1).forEach(row => {
+            const excelDate = row[dateInstalledIndex]+1;
+            if (typeof excelDate === 'number') {
+              row[dateInstalledIndex] = excelDateToJSDate(excelDate).toLocaleDateString();
+            }
+          });
+        }
 
-  function renderTable() {
-    const tableContainer = document.getElementById('tableContainer');
-    const table = document.createElement('table');
-    const thead = table.createTHead();
-    const tbody = table.createTBody();
-    tableContainer.innerHTML = '';
+        originalData = jsonData;
+        filteredData = jsonData.slice(1);
+        columnFilters = new Array(originalData[0].length).fill('');
+        renderTable();
+        renderPaginationControls();
+      })
+      .catch(error => console.error('Error fetching or parsing the Excel file:', error));
 
-    // Header row
-    const headerRow = thead.insertRow();
-    originalData[0].forEach(cell => {
-      const th = document.createElement('th');
-      th.textContent = cell;
-      headerRow.appendChild(th);
-    });
+    function excelDateToJSDate(excelDate) {
+      return new Date((excelDate - 25569) * 86400000);
+    }
 
-    // Only show column filters if a global search has been made
-    const globalSearchValue = document.getElementById('searchInput').value.trim();
-    if (globalSearchValue !== '') {
+    function renderTable() {
+      const tableContainer = document.getElementById('tableContainer');
+      const table = document.createElement('table');
+      const thead = table.createTHead();
+      const tbody = table.createTBody();
+      tableContainer.innerHTML = '';
+
+      // Header row
+      const headerRow = thead.insertRow();
+      originalData[0].forEach(cell => {
+        const th = document.createElement('th');
+        th.textContent = cell;
+        headerRow.appendChild(th);
+      });
+
+      // Filter row (always shown now)
       const filterRow = thead.insertRow();
       filterRow.classList.add('filter-row');
       originalData[0].forEach((_, colIndex) => {
@@ -149,11 +170,9 @@
         input.setAttribute('list', `column-filter-list-${colIndex}`);
         input.placeholder = 'Type or select a value...';
 
-        // Create a datalist for each column filter
         const datalist = document.createElement('datalist');
         datalist.id = `column-filter-list-${colIndex}`;
 
-        // Get unique values for this column from the filtered data
         const columnValues = getColumnUniqueValues(colIndex);
         columnValues.forEach(value => {
           const option = document.createElement('option');
@@ -162,103 +181,97 @@
         });
 
         input.value = columnFilters[colIndex] || '';
-        input.oninput = debounce(() => {
+
+        const handleFilterChange = () => {
           columnFilters[colIndex] = input.value;
           applyAllFilters();
-        }, 200);
+        };
+        input.oninput = debounce(handleFilterChange, 200);
+        input.onchange = handleFilterChange;
 
         th.appendChild(input);
         th.appendChild(datalist);
         filterRow.appendChild(th);
       });
+
+      const start = (currentPage - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      const pageData = filteredData.slice(start, end);
+
+      pageData.forEach(row => {
+        const tr = tbody.insertRow();
+        row.forEach(cell => {
+          const td = tr.insertCell();
+          td.textContent = cell !== undefined ? cell : '';
+        });
+      });
+
+      tableContainer.appendChild(table);
     }
 
-    // Paginated rows
-    const start = (currentPage - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    const pageData = filteredData.slice(start, end);
-
-    pageData.forEach(row => {
-      const tr = tbody.insertRow();
-      row.forEach(cell => {
-        const td = tr.insertCell();
-        td.textContent = cell !== undefined ? cell : '';
+    function getColumnUniqueValues(colIndex) {
+      const values = new Set();
+      filteredData.forEach(row => {
+        if (row[colIndex] !== undefined) {
+          values.add(row[colIndex]);
+        }
       });
-    });
+      return Array.from(values);
+    }
 
-    tableContainer.appendChild(table);
-  }
+    function applyAllFilters() {
+      const input = document.getElementById('searchInput').value.toLowerCase().trim();
 
-  function getColumnUniqueValues(colIndex) {
-    // Get unique values from the filtered data, not the original data
-    const columnValues = new Set();
-    filteredData.forEach(row => {
-      if (row[colIndex] !== undefined) {
-        columnValues.add(row[colIndex]);
-      }
-    });
-    return Array.from(columnValues);
-  }
+      filteredData = originalData.slice(1).filter(row => {
+        const matchesGlobal = row.some(cell => String(cell).toLowerCase().includes(input));
+        const matchesColumns = columnFilters.every((filter, index) => {
+          if (!filter) return true;
+          return String(row[index] || '').toLowerCase().includes(filter.toLowerCase());
+        });
+        return matchesGlobal && matchesColumns;
+      });
 
-  function applyAllFilters() {
-    const input = document.getElementById('searchInput').value.toLowerCase().trim();
+      currentPage = 1;
+      renderTable();
+      renderPaginationControls();
+    }
 
-    // If global search is cleared, reset column filters
-    if (input === '') {
+    function renderPaginationControls() {
+      const pagination = document.getElementById('paginationControls');
+      const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+      pagination.innerHTML = `
+        <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+        Page ${currentPage} of ${totalPages}
+        <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+      `;
+    }
+
+    function changePage(delta) {
+      const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+      currentPage = Math.min(Math.max(1, currentPage + delta), totalPages);
+      renderTable();
+      renderPaginationControls();
+    }
+
+    function debounce(fn, delay) {
+      let timer;
+      return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+      };
+    }
+
+    document.getElementById('searchInput').addEventListener('input', debounce(applyAllFilters, 200));
+
+    document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+      document.getElementById('searchInput').value = '';
       columnFilters = new Array(originalData[0].length).fill('');
-    }
-
-    filteredData = originalData.slice(1).filter(row => {
-      const matchesGlobal = row.some(cell => String(cell).toLowerCase().includes(input));
-      const matchesColumns = columnFilters.every((filter, index) => {
-        if (!filter) return true;
-        return String(row[index] || '').toLowerCase().includes(filter);
-      });
-      return matchesGlobal && matchesColumns;
+      filteredData = originalData.slice(1);
+      currentPage = 1;
+      renderTable();
+      renderPaginationControls();
     });
-
-    currentPage = 1;
-    renderTable();
-    renderPaginationControls();
-  }
-
-  function renderPaginationControls() {
-    const pagination = document.getElementById('paginationControls');
-    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    pagination.innerHTML = `
-      <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
-      Page ${currentPage} of ${totalPages}
-      <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
-    `;
-  }
-
-  function changePage(delta) {
-    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    currentPage = Math.min(Math.max(1, currentPage + delta), totalPages);
-    renderTable();
-    renderPaginationControls();
-  }
-
-  function debounce(fn, delay) {
-    let timer;
-    return function (...args) {
-      clearTimeout(timer);
-      timer = setTimeout(() => fn.apply(this, args), delay);
-    };
-  }
-
-  document.getElementById('searchInput').addEventListener('input', debounce(applyAllFilters, 200));
-
-  // Clear filters button functionality
-  document.getElementById('clearFiltersBtn').addEventListener('click', () => {
-    document.getElementById('searchInput').value = '';
-    columnFilters = new Array(originalData[0].length).fill('');
-    filteredData = originalData.slice(1); // Reset to full data
-    currentPage = 1;
-    renderTable();
-    renderPaginationControls();
-  });
-</script>
+  </script>
 
 </body>
 </html>
