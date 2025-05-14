@@ -102,6 +102,7 @@
       width: 100%;
       box-sizing: border-box;
       padding: 4px;
+      text-align: center;
     }
 
     #paginationControls {
@@ -184,7 +185,7 @@
 
       // Header row
       const headerRow = thead.insertRow();
-      originalData[0].forEach(cell => {
+      originalData[0].forEach((cell, index) => {
         const th = document.createElement('th');
         th.textContent = cell;
         headerRow.appendChild(th);
@@ -211,11 +212,13 @@
 
         input.value = columnFilters[colIndex] || '';
 
+        // Apply debounce on column filter change
         const handleFilterChange = () => {
           columnFilters[colIndex] = input.value;
-          applyAllFilters();
+          applyAllFilters(); // Apply both column and global filters together
         };
-        input.oninput = debounce(handleFilterChange, 200);
+
+        input.oninput = debounce(handleFilterChange, 500); // Increased debounce delay to 500ms
         input.onchange = handleFilterChange;
 
         th.appendChild(input);
@@ -229,13 +232,47 @@
 
       pageData.forEach(row => {
         const tr = tbody.insertRow();
-        row.forEach(cell => {
+        row.forEach((cell, colIndex) => {
           const td = tr.insertCell();
           td.textContent = cell !== undefined ? cell : '';
+
+          // Highlight and make bold the "Installed Product ID" column (column 2, index 1)
+          if (colIndex === 1) {
+            td.style.backgroundColor = '#B2F8B2'; // Yellow highlight color
+            td.style.fontWeight = 'bold'; // Make the text bold
+          }
+
+          // Align text to the left for columns 1, 2, 3, and 4 (index 0, 1, 2, 3)
+          if (colIndex == 0) {
+            td.style.textAlign = 'left'; // Left-align the text
+          }
         });
       });
 
       tableContainer.appendChild(table);
+    }
+
+    // Function to apply all filters: global + column-specific
+    function applyAllFilters() {
+      const globalSearchValue = document.getElementById('searchInput').value.toLowerCase().trim();
+
+      filteredData = originalData.slice(1).filter(row => {
+        // Global search filter
+        const matchesGlobalSearch = row.some(cell => String(cell).toLowerCase().includes(globalSearchValue));
+
+        // Column-specific filters
+        const matchesColumnFilters = columnFilters.every((filter, colIndex) => {
+          if (!filter) return true; // If no filter, allow all values
+          return String(row[colIndex] || '').toLowerCase().includes(filter.toLowerCase());
+        });
+
+        // Row is displayed if it matches both global search and column filters
+        return matchesGlobalSearch && matchesColumnFilters;
+      });
+
+      currentPage = 1;
+      renderTable();
+      renderPaginationControls();
     }
 
     function getColumnUniqueValues(colIndex) {
@@ -246,23 +283,6 @@
         }
       });
       return Array.from(values);
-    }
-
-    function applyAllFilters() {
-      const input = document.getElementById('searchInput').value.toLowerCase().trim();
-
-      filteredData = originalData.slice(1).filter(row => {
-        const matchesGlobal = row.some(cell => String(cell).toLowerCase().includes(input));
-        const matchesColumns = columnFilters.every((filter, index) => {
-          if (!filter) return true;
-          return String(row[index] || '').toLowerCase().includes(filter.toLowerCase());
-        });
-        return matchesGlobal && matchesColumns;
-      });
-
-      currentPage = 1;
-      renderTable();
-      renderPaginationControls();
     }
 
     function renderPaginationControls() {
@@ -282,6 +302,7 @@
       renderPaginationControls();
     }
 
+    // Debounce function to delay filtering until user stops typing
     function debounce(fn, delay) {
       let timer;
       return function (...args) {
