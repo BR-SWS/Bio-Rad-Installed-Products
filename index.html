@@ -237,13 +237,13 @@
           td.textContent = cell !== undefined ? cell : '';
 
           // Highlight and make bold the "Installed Product ID" column (column 2, index 1)
-          if (colIndex === 1) {
+          if (colIndex === 0) {
             td.style.backgroundColor = '#B2F8B2'; // Yellow highlight color
             td.style.fontWeight = 'bold'; // Make the text bold
           }
 
           // Align text to the left for columns 1, 2, 3, and 4 (index 0, 1, 2, 3)
-          if (colIndex == 0) {
+          if (colIndex == 1) {
             td.style.textAlign = 'left'; // Left-align the text
           }
         });
