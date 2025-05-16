@@ -135,7 +135,7 @@
   <div id="paginationControls"></div>
 
   <script>
-    const fileUrl = 'https://raw.githubusercontent.com/BR-SWS/Bio-Rad-Installed-Products/main/InstalledProducts.xlsx';
+    const fileUrl = 'https://raw.githubusercontent.com/BR-SWS/Bio-Rad-Installed-Products/main/IP_HistoricalData.xlsx';
     let originalData = [];
     let filteredData = [];
     let currentPage = 1;
@@ -176,81 +176,84 @@
       return new Date((excelDate - 25569) * 86400000);
     }
 
-    function renderTable() {
-      const tableContainer = document.getElementById('tableContainer');
-      const table = document.createElement('table');
-      const thead = table.createTHead();
-      const tbody = table.createTBody();
-      tableContainer.innerHTML = '';
+   function renderTable() {
+  const tableContainer = document.getElementById('tableContainer');
+  const table = document.createElement('table');
+  const thead = table.createTHead();
+  const tbody = table.createTBody();
+  tableContainer.innerHTML = '';
 
-      // Header row
-      const headerRow = thead.insertRow();
-      originalData[0].forEach((cell, index) => {
-        const th = document.createElement('th');
-        th.textContent = cell;
-        headerRow.appendChild(th);
-      });
+  // Header row
+  const headerRow = thead.insertRow();
+  originalData[0].forEach((cell, index) => {
+    const th = document.createElement('th');
+    th.textContent = cell;
+    headerRow.appendChild(th);
+  });
 
-      // Filter row (always shown now)
-      const filterRow = thead.insertRow();
-      filterRow.classList.add('filter-row');
-      originalData[0].forEach((_, colIndex) => {
-        const th = document.createElement('th');
-        const input = document.createElement('input');
-        input.setAttribute('list', `column-filter-list-${colIndex}`);
-        input.placeholder = 'Type or select a value...';
+  // Filter row (always shown now)
+  const filterRow = thead.insertRow();
+  filterRow.classList.add('filter-row');
+  originalData[0].forEach((_, colIndex) => {
+    const th = document.createElement('th');
+    const input = document.createElement('input');
+    input.setAttribute('list', `column-filter-list-${colIndex}`);
+    input.placeholder = 'Type or select a value...';
 
-        const datalist = document.createElement('datalist');
-        datalist.id = `column-filter-list-${colIndex}`;
+    const datalist = document.createElement('datalist');
+    datalist.id = `column-filter-list-${colIndex}`;
 
-        const columnValues = getColumnUniqueValues(colIndex);
-        columnValues.forEach(value => {
-          const option = document.createElement('option');
-          option.value = value;
-          datalist.appendChild(option);
-        });
+    const columnValues = getColumnUniqueValues(colIndex);
+    columnValues.forEach(value => {
+      const option = document.createElement('option');
+      option.value = value;
+      datalist.appendChild(option);
+    });
 
-        input.value = columnFilters[colIndex] || '';
+    input.value = columnFilters[colIndex] || '';
 
-        // Apply debounce on column filter change
-        const handleFilterChange = () => {
-          columnFilters[colIndex] = input.value;
-          applyAllFilters(); // Apply both column and global filters together
-        };
+    // Apply debounce on column filter change
+    const handleFilterChange = () => {
+      columnFilters[colIndex] = input.value;
+      applyAllFilters(); // Apply both column and global filters together
+    };
 
-        input.oninput = debounce(handleFilterChange, 500); // Increased debounce delay to 500ms
-        input.onchange = handleFilterChange;
+    input.oninput = debounce(handleFilterChange, 500); // Increased debounce delay to 500ms
+    input.onchange = handleFilterChange;
 
-        th.appendChild(input);
-        th.appendChild(datalist);
-        filterRow.appendChild(th);
-      });
+    th.appendChild(input);
+    th.appendChild(datalist);
+    filterRow.appendChild(th);
+  });
 
-      const start = (currentPage - 1) * rowsPerPage;
-      const end = start + rowsPerPage;
-      const pageData = filteredData.slice(start, end);
+  const start = (currentPage - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const pageData = filteredData.slice(start, end);
 
-      pageData.forEach(row => {
-        const tr = tbody.insertRow();
-        row.forEach((cell, colIndex) => {
-          const td = tr.insertCell();
-          td.textContent = cell !== undefined ? cell : '';
+  pageData.forEach(row => {
+    const tr = tbody.insertRow();
+    originalData[0].forEach((_, colIndex) => {
+      const td = tr.insertCell();
+      const cellData = row[colIndex];
 
-          // Highlight and make bold the "Installed Product ID" column (column 2, index 1)
-          if (colIndex === 0) {
-            td.style.backgroundColor = '#B2F8B2'; // Yellow highlight color
-            td.style.fontWeight = 'bold'; // Make the text bold
-          }
+      td.textContent = cellData !== undefined && cellData !== null ? cellData : ''; // If empty or null, set as empty cell
 
-          // Align text to the left for columns 1, 2, 3, and 4 (index 0, 1, 2, 3)
-          if (colIndex == 1) {
-            td.style.textAlign = 'left'; // Left-align the text
-          }
-        });
-      });
+      // Highlight and make bold the "Installed Product ID" column (column 2, index 1)
+      if (colIndex === 0) {
+        td.style.backgroundColor = '#B2F8B2'; // Yellow highlight color
+        td.style.fontWeight = 'bold'; // Make the text bold
+      }
 
-      tableContainer.appendChild(table);
-    }
+      // Align text to the left for columns 1, 2, 3, and 4 (index 0, 1, 2, 3)
+      if (colIndex === 1) {
+        td.style.textAlign = 'left'; // Left-align the text
+      }
+    });
+  });
+
+  tableContainer.appendChild(table);
+}
+
 
     // Function to apply all filters: global + column-specific
     function applyAllFilters() {
