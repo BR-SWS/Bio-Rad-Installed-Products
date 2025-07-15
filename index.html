@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -328,3 +329,335 @@
 
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Installed Product Search</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Header Section */
+    #header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    /* Logo Positioning */
+    #logo {
+      position: absolute;
+      left: 5px;
+      top: 5px;
+      width: 130px; /* Adjust logo size */
+    }
+
+    h2 {
+      text-align: center;
+      flex-grow: 0;
+      margin: 0;
+    }
+
+    #search-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"] {
+      margin-bottom: 10px;
+      padding: 5px;
+      width: 300px;
+    }
+
+    button {
+      padding: 5px 10px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    #tableContainerWrapper {
+      width: 100%;
+      position: relative;
+    }
+
+    #tableContainer {
+      overflow-x: auto;
+      width: 100%;
+      max-height: 70vh;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: max-content;
+      min-width: 100%;
+      table-layout: auto;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: center;
+      border: 1px solid #ddd;
+      font-size: 12px;
+      white-space: normal;
+      word-wrap: break-word;
+    }
+
+    th {
+      background-color: #4caf50;
+      color: white;
+      font-size: 16px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tr:nth-child(odd) {
+      background-color: #f2f2f2;
+    }
+
+    .filter-row input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 4px;
+      text-align: center;
+    }
+
+    #paginationControls {
+      margin-top: 15px;
+    }
+
+    #paginationControls button {
+      padding: 5px 10px;
+      margin: 0 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="header">
+    <!-- Logo from GitHub -->
+    <img id="logo" src="https://github.com/BR-SWS/Bio-Rad-Installed-Products/blob/c1e2968d515352e2900199fcdfddfbbc99890708/Bio-Rad_Logo.png?raw=true" alt="Logo">
+    <h2>BIO-RAD INSTALLED PRODUCTS</h2>
+  </div>
+
+  <div id="search-container">
+    <input type="text" id="searchInput" placeholder="Search Installed Products...">
+    <button id="clearFiltersBtn">Clear All Filters</button>
+  </div>
+
+  <div id="tableContainerWrapper">
+    <div id="tableContainer"></div>
+  </div>
+
+  <div id="paginationControls"></div>
+
+  <script>
+    const fileUrl = 'https://raw.githubusercontent.com/BR-SWS/Bio-Rad-Installed-Products/main/MasterData.xlsx';
+    let originalData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    const rowsPerPage = 20;
+    let columnFilters = [];
+
+    fetch(fileUrl)
+      .then(response => response.arrayBuffer())
+      .then(data => {
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        const headerRow = jsonData[0];
+        const dateInstalledIndex = headerRow.findIndex(cell =>
+          typeof cell === 'string' && cell.trim().toLowerCase().includes('date installed')
+        );
+
+        if (dateInstalledIndex !== -1) {
+          jsonData.slice(1).forEach(row => {
+            const excelDate = row[dateInstalledIndex]+1;
+            if (typeof excelDate === 'number') {
+              row[dateInstalledIndex] = excelDateToJSDate(excelDate).toLocaleDateString();
+            }
+          });
+        }
+
+        originalData = jsonData;
+        filteredData = jsonData.slice(1);
+        columnFilters = new Array(originalData[0].length).fill('');
+        renderTable();
+        renderPaginationControls();
+      })
+      .catch(error => console.error('Error fetching or parsing the Excel file:', error));
+
+    function excelDateToJSDate(excelDate) {
+      return new Date((excelDate - 25569) * 86400000);
+    }
+
+   function renderTable() {
+  const tableContainer = document.getElementById('tableContainer');
+  const table = document.createElement('table');
+  const thead = table.createTHead();
+  const tbody = table.createTBody();
+  tableContainer.innerHTML = '';
+
+  // Header row
+  const headerRow = thead.insertRow();
+  originalData[0].forEach((cell, index) => {
+    const th = document.createElement('th');
+    th.textContent = cell;
+    headerRow.appendChild(th);
+  });
+
+  // Filter row (always shown now)
+  const filterRow = thead.insertRow();
+  filterRow.classList.add('filter-row');
+  originalData[0].forEach((_, colIndex) => {
+    const th = document.createElement('th');
+    const input = document.createElement('input');
+    input.setAttribute('list', `column-filter-list-${colIndex}`);
+    input.placeholder = 'Type or select a value...';
+
+    const datalist = document.createElement('datalist');
+    datalist.id = `column-filter-list-${colIndex}`;
+
+    const columnValues = getColumnUniqueValues(colIndex);
+    columnValues.forEach(value => {
+      const option = document.createElement('option');
+      option.value = value;
+      datalist.appendChild(option);
+    });
+
+    input.value = columnFilters[colIndex] || '';
+
+    // Apply debounce on column filter change
+    const handleFilterChange = () => {
+      columnFilters[colIndex] = input.value;
+      applyAllFilters(); // Apply both column and global filters together
+    };
+
+    input.oninput = debounce(handleFilterChange, 500); // Increased debounce delay to 500ms
+    input.onchange = handleFilterChange;
+
+    th.appendChild(input);
+    th.appendChild(datalist);
+    filterRow.appendChild(th);
+  });
+
+  const start = (currentPage - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const pageData = filteredData.slice(start, end);
+
+  pageData.forEach(row => {
+    const tr = tbody.insertRow();
+    originalData[0].forEach((_, colIndex) => {
+      const td = tr.insertCell();
+      const cellData = row[colIndex];
+
+      td.textContent = cellData !== undefined && cellData !== null ? cellData : ''; // If empty or null, set as empty cell
+
+      // Highlight and make bold the "Installed Product ID" column (column 2, index 1)
+      if (colIndex === 0) {
+        td.style.backgroundColor = '#B2F8B2'; // Yellow highlight color
+        td.style.fontWeight = 'bold'; // Make the text bold
+      }
+
+      // Align text to the left for columns 1, 2, 3, and 4 (index 0, 1, 2, 3)
+      if (colIndex === 1) {
+        td.style.textAlign = 'left'; // Left-align the text
+      }
+    });
+  });
+
+  tableContainer.appendChild(table);
+}
+
+
+    // Function to apply all filters: global + column-specific
+    function applyAllFilters() {
+      const globalSearchValue = document.getElementById('searchInput').value.toLowerCase().trim();
+
+      filteredData = originalData.slice(1).filter(row => {
+        // Global search filter
+        const matchesGlobalSearch = row.some(cell => String(cell).toLowerCase().includes(globalSearchValue));
+
+        // Column-specific filters
+        const matchesColumnFilters = columnFilters.every((filter, colIndex) => {
+          if (!filter) return true; // If no filter, allow all values
+          return String(row[colIndex] || '').toLowerCase().includes(filter.toLowerCase());
+        });
+
+        // Row is displayed if it matches both global search and column filters
+        return matchesGlobalSearch && matchesColumnFilters;
+      });
+
+      currentPage = 1;
+      renderTable();
+      renderPaginationControls();
+    }
+
+    function getColumnUniqueValues(colIndex) {
+      const values = new Set();
+      filteredData.forEach(row => {
+        if (row[colIndex] !== undefined) {
+          values.add(row[colIndex]);
+        }
+      });
+      return Array.from(values);
+    }
+
+    function renderPaginationControls() {
+      const pagination = document.getElementById('paginationControls');
+      const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+      pagination.innerHTML = `
+        <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+        Page ${currentPage} of ${totalPages}
+        <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+      `;
+    }
+
+    function changePage(delta) {
+      const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+      currentPage = Math.min(Math.max(1, currentPage + delta), totalPages);
+      renderTable();
+      renderPaginationControls();
+    }
+
+    // Debounce function to delay filtering until user stops typing
+    function debounce(fn, delay) {
+      let timer;
+      return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+      };
+    }
+
+    document.getElementById('searchInput').addEventListener('input', debounce(applyAllFilters, 200));
+
+    document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+      document.getElementById('searchInput').value = '';
+      columnFilters = new Array(originalData[0].length).fill('');
+      filteredData = originalData.slice(1);
+      currentPage = 1;
+      renderTable();
+      renderPaginationControls();
+    });
+  </script>
+
+</body>
+</html>
+>>>>>>> 3c5b567 (Auto commit on 2025-07-15 10:56:56)
